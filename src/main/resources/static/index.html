@@ -3,665 +3,1055 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>QuizConnect</title>
-
     <style>
-        * {
-            box-sizing: border-box;
+        :root {
+            color-scheme: light;
+            --ink: #273746;
+            --muted: #62717d;
+            --line: #d9e1e7;
+            --paper: #fff;
+            --page: #edf2f5;
+            --blue: #078db6;
+            --blue-dark: #08769a;
+            --blue-light: #e1f5fa;
+            --green: #ccebd5;
+            --green-strong: #54b96c;
+            --red: #f3b5b5;
+            --yellow: #ffd264;
         }
+
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 32px 16px;
+            padding: 28px 18px 62px;
+            background: var(--page);
+            color: var(--ink);
             font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-            color: #102a43;
-            background:
-                linear-gradient(135deg, rgba(14, 116, 144, 0.96), rgba(15, 23, 42, 0.98)),
-                #0f172a;
-            overflow-x: hidden;
         }
 
-        .container {
-            width: 90%;
-            max-width: 560px;
-            text-align: center;
-            padding: 44px;
-            border: 1px solid rgba(255, 255, 255, 0.72);
-            border-radius: 24px;
-            background: rgba(255, 255, 255, 0.96);
-            box-shadow: 0 24px 70px rgba(2, 12, 27, 0.35);
-            animation: entrar 650ms ease-out both;
-        }
+        button, input, textarea, select { font: inherit; }
+        button { cursor: pointer; }
+        button:disabled { cursor: not-allowed; opacity: .6; }
+        [hidden] { display: none !important; }
 
-        h1 {
-            margin: 0;
-            color: #0f766e;
-            font-size: clamp(34px, 8vw, 52px);
-            letter-spacing: -1px;
-        }
-
-        .subtitulo {
-            max-width: 360px;
-            margin: 12px auto 30px;
-            color: #52606d;
-            line-height: 1.6;
-        }
-
-        .campo-disciplina {
-            width: 100%;
-            margin-bottom: 4px;
-            padding: 13px 14px;
-            border: 1px solid #b2f5ea;
-            border-radius: 10px;
-            background: #f0fdfa;
-            color: #115e59;
-            font: inherit;
-        }
-
-        button {
-            width: 100%;
-            padding: 14px 18px;
-            margin-top: 12px;
-            border: 0;
-            border-radius: 12px;
-            font: inherit;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
-        }
-
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-        }
-
-        button:focus-visible,
-        input:focus-visible {
-            outline: 3px solid rgba(245, 158, 11, 0.55);
-            outline-offset: 3px;
-        }
-
-        .criar {
-            background: #0f766e;
-            color: white;
-            box-shadow: 0 8px 18px rgba(15, 118, 110, 0.25);
-        }
-
-        .entrar {
-            background: #e6fffa;
-            color: #115e59;
-        }
-
-        .lobby {
-            display: none;
-            margin-top: 32px;
-            padding: 28px 0 0;
-            border-top: 1px solid #d9e2ec;
-            animation: aparecer 450ms ease-out both;
-        }
-
-        .lobby h2 {
-            margin: 0 0 6px;
-            color: #102a43;
-            font-size: 28px;
-        }
-
-        .lobby > div:not(.codigo-area) {
-            color: #627d98;
-            font-size: 14px;
-        }
-
-        .codigo-area {
-            display: flex;
-            gap: 8px;
-            margin: 10px 0 18px;
-        }
-
-        .codigo-area input {
-            min-width: 0;
-            flex: 1;
-            padding: 11px;
-            border: 2px solid #b2f5ea;
-            border-radius: 10px;
-            background: #f0fdfa;
-            color: #0f766e;
-            font-size: 21px;
-            font-weight: bold;
-            letter-spacing: 4px;
-            text-align: center;
-        }
-
-        .copiar {
-            width: auto;
-            margin-top: 0;
-            padding: 10px 14px;
-            background: #ffedd5;
-            color: #c2410c;
-        }
-
-        .status-copia {
-            align-self: center;
-            min-width: 0;
-            color: #0f766e;
-            font-size: 12px;
-            font-weight: bold;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 180ms ease;
-        }
-
-        .status-copia.visivel {
-            opacity: 1;
-        }
-
-        #jogadores {
-            display: grid;
-            gap: 7px;
-            padding: 0;
-            list-style: none;
-            color: #334e68;
-        }
-
-        #jogadores li {
-            padding: 8px;
-            border: 1px solid #d9e2ec;
+        .app {
+            width: min(100%, 1120px);
+            margin: 0 auto;
+            padding: 26px 30px 34px;
+            border: 1px solid #dce4e9;
             border-radius: 8px;
-            background: #f8fafc;
-            animation: aparecer 250ms ease-out both;
+            background: var(--paper);
+            box-shadow: 0 5px 20px rgba(28, 52, 68, .07);
         }
 
-        .quiz {
-            display: none;
-            margin-top: 32px;
-            padding-top: 28px;
-            border-top: 1px solid #d9e2ec;
-            text-align: left;
-            animation: aparecer 450ms ease-out both;
+        .masthead, .section-heading, .teacher-heading, .toolbar, .invite-row,
+        .question-actions, .editor-actions, .student-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
         }
 
-        .quiz h2,
-        .quiz h3 {
-            text-align: center;
+        .masthead { padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+        .brand { margin: 0; color: #263b4a; font-size: 30px; letter-spacing: 0; }
+        .brand small { display: block; margin-top: 4px; color: var(--muted); font-size: 14px; font-weight: 400; }
+        .auth { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+        .auth-state { color: var(--muted); font-size: 14px; }
+        .auth-modes { display: flex; gap: 8px; margin: 14px 0; }
+        .auth-modes .button { flex: 1; }
+        .auth-modes .selected { border-color: var(--blue); background: var(--blue-light); color: var(--blue-dark); }
+
+        .button {
+            min-height: 42px;
+            padding: 9px 15px;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            background: var(--blue-light);
+            color: #08799c;
+            font-weight: 700;
         }
+        .button:hover:not(:disabled) { background: #d2eef5; }
+        .button.primary { background: var(--blue); color: #fff; }
+        .button.primary:hover:not(:disabled) { background: var(--blue-dark); }
+        .button.neutral { border-color: #cbd5dc; background: #f8fafb; color: var(--ink); }
+        .button.danger { border-color: #e6b9b9; background: #fff7f7; color: #a63636; }
+        .button.small { min-height: 34px; padding: 6px 10px; font-size: 13px; }
 
-        .quiz h2 {
-            margin: 0 0 8px;
-            color: #102a43;
+        .welcome { padding: 22px 0 4px; }
+        .welcome h1 { margin: 0 0 7px; font-size: 25px; }
+        .welcome > p { margin: 0; color: var(--muted); line-height: 1.5; }
+        .access-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 24px; }
+        .access-panel { padding: 19px; border: 1px solid var(--line); border-radius: 6px; background: #fbfcfd; }
+        .access-panel h2 { margin: 0 0 8px; font-size: 19px; }
+        .access-panel p { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.45; }
+        label { display: block; margin: 12px 0 5px; color: #425462; font-size: 14px; font-weight: 700; }
+        input, textarea, select {
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 11px;
+            border: 1px solid #c6d0d7;
+            border-radius: 4px;
+            background: #fff;
+            color: var(--ink);
         }
-
-        .quiz h3 {
-            margin: 0;
-            color: #0f766e;
-            font-size: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+            outline: 3px solid rgba(7, 141, 182, .26);
+            outline-offset: 2px;
         }
+        textarea { min-height: 64px; resize: vertical; line-height: 1.4; }
+        .access-panel .button { width: 100%; margin-top: 15px; }
+        .hint { color: var(--muted); font-size: 13px; }
+        .message { min-height: 1.4em; margin: 10px 0 0; color: #475967; font-size: 14px; }
+        .message.error { color: #a63636; }
 
-        #contador {
-            margin: 18px 0 8px;
-            color: #829ab1;
-            font-size: 13px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
+        .teacher { padding-top: 22px; }
+        .teacher-heading { align-items: flex-start; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+        .eyebrow { margin: 0 0 4px; color: var(--blue-dark); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+        .teacher-heading h1 { margin: 0; font-size: 27px; line-height: 1.2; }
+        .teacher-heading .room-code { margin-top: 7px; color: var(--muted); font-size: 14px; }
+        .toolbar { justify-content: flex-end; flex-wrap: wrap; }
+        .toolbar .button { min-height: 38px; }
+        .room-line { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+        .room-status { color: var(--muted); font-size: 14px; }
+        .invite-row { justify-content: flex-start; }
+        .invite-row input { width: 130px; text-align: center; font-size: 20px; font-weight: 700; letter-spacing: 2px; }
 
-        #pontuacao {
-            margin: 0 0 18px;
-            color: #c2410c;
-            font-size: 15px;
-            font-weight: bold;
-            text-align: right;
-        }
+        .toggles { display: flex; flex-wrap: wrap; gap: 28px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+        .toggle { display: inline-flex; align-items: center; gap: 9px; color: #405363; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+        .toggle-track { position: relative; width: 45px; height: 25px; border-radius: 15px; background: #aebac2; transition: background 150ms ease; }
+        .toggle-track::after { position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: white; content: ""; transition: transform 150ms ease; }
+        .toggle input:checked + .toggle-track { background: var(--green-strong); }
+        .toggle input:checked + .toggle-track::after { transform: translateX(20px); }
+        .toggle input:focus-visible + .toggle-track { outline: 3px solid rgba(7, 141, 182, .26); outline-offset: 2px; }
 
-        #enunciado {
-            margin: 0 0 18px;
-            color: #243b53;
-            font-size: 18px;
-            font-weight: bold;
-            line-height: 1.5;
-        }
+        .table-wrap { width: 100%; overflow-x: auto; padding: 14px 0 4px; }
+        .results-table { width: 100%; min-width: 680px; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+        .results-table th { padding: 6px 8px; color: #147fa0; font-size: 13px; text-align: left; }
+        .results-table th:first-child { width: 225px; }
+        .results-table th:nth-child(2) { width: 90px; }
+        .results-table th.question-col { min-width: 94px; color: #374d5c; text-align: center; }
+        .results-table td { height: 44px; padding: 8px; border-radius: 4px; background: #f1f4f6; text-align: center; }
+        .results-table td.student-name { overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+        .results-table td.score-cell { font-weight: 700; }
+        .results-table td.answer-correct { background: var(--green); }
+        .results-table td.answer-wrong { background: var(--red); }
+        .results-table tfoot td { background: #dce5e9; font-weight: 700; }
+        .results-table .presence { display: inline-block; width: 11px; height: 11px; margin-right: 9px; border-radius: 50%; background: var(--green-strong); }
+        .empty-row { padding: 22px !important; color: var(--muted); text-align: center !important; }
 
-        .alternativas {
-            display: grid;
-            gap: 8px;
-        }
+        .editor { margin-top: 21px; padding-top: 19px; border-top: 1px solid var(--line); }
+        .section-heading { align-items: flex-start; }
+        .section-heading h2 { margin: 0; font-size: 21px; }
+        .section-heading p { margin: 5px 0 0; color: var(--muted); font-size: 14px; }
+        .import-controls { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 12px; margin: 16px 0 20px; padding: 14px; border: 1px solid var(--line); border-radius: 5px; background: #f9fbfc; }
+        .import-controls label { margin-top: 0; }
+        .import-controls .button { min-width: 190px; }
+        .question-list { display: grid; gap: 15px; margin-top: 15px; }
+        .question-sheet { padding: 16px; border: 1px solid #d7e0e6; border-radius: 5px; background: #fff; }
+        .question-sheet-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 7px; }
+        .question-sheet-head strong { color: #344a59; }
+        .source { color: var(--muted); font-size: 12px; }
+        .correct-answer { border-color: #58b974; background: #e4f5e8; }
+        .correct-answer:focus-visible { outline-color: rgba(50, 150, 78, .28); }
+        .wrong-answer { min-height: 54px; max-height: 70px; }
+        .question-actions { justify-content: flex-start; flex-wrap: wrap; margin-top: 10px; }
+        .question-actions .button { min-height: 36px; }
+        .question-message { min-height: 1.3em; margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+        .question-message.error { color: #a63636; }
 
-        .alternativa {
-            margin-top: 0;
-            border: 1px solid #d9e2ec;
-            background: #f8fafc;
-            color: #243b53;
-            text-align: left;
-        }
+        .student { padding-top: 22px; }
+        .student-heading h1 { margin: 0; font-size: 25px; }
+        .student-quiz { max-width: 760px; margin: 20px auto 0; }
+        .progress { margin: 0 0 9px; color: var(--muted); font-size: 14px; }
+        .student-question { margin: 0 0 18px; font-size: 22px; line-height: 1.4; }
+        .answer-options { display: grid; gap: 9px; }
+        .answer-options .button { min-height: 52px; border: 1px solid #cbd7de; background: #f8fafb; color: var(--ink); text-align: left; }
+        .answer-options .button:hover:not(:disabled) { border-color: var(--blue); background: #eff9fc; }
+        .answer-options .answer-correct { border-color: #58b974; background: var(--green); }
+        .answer-options .answer-wrong { border-color: #da8686; background: var(--red); }
+        .student-next { display: flex; justify-content: flex-end; margin-top: 15px; }
+        .student-score { color: var(--muted); font-size: 14px; }
+        .finish-ranking { margin-top: 22px; padding-top: 15px; border-top: 1px solid var(--line); }
 
-        .alternativa.correta {
-            border-color: #4ade80;
-            background: #dcfce7;
-            color: #166534;
-        }
+        .credits { position: fixed; right: 16px; bottom: 12px; z-index: 5; padding: 6px 9px; border-radius: 4px; background: rgba(255, 255, 255, .94); color: #526775; font-size: 12px; text-decoration: none; box-shadow: 0 1px 5px rgba(30, 50, 65, .12); }
+        .credits:hover { color: var(--blue-dark); text-decoration: underline; }
 
-        .alternativa.errada {
-            border-color: #f87171;
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .proxima {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .sair {
-            margin-top: 16px;
-            background: transparent;
-            border: 1px solid #fca5a5;
-            color: #b91c1c;
-        }
-
-        .inicio-novo {
-            margin-top: 10px;
-            background: transparent;
-            color: #627d98;
-            font-size: 13px;
-        }
-
-        .resultado {
-            display: none;
-            margin-top: 24px;
-            padding: 20px;
-            border-radius: 14px;
-            background: #f0fdfa;
-            border: 1px solid #99f6e4;
-            text-align: center;
-            animation: aparecer 450ms ease-out both;
-        }
-
-        .resultado h3 {
-            margin: 0 0 8px;
-            color: #0f766e;
-        }
-
-        .resultado strong {
-            color: #c2410c;
-            font-size: 28px;
-        }
-
-        button:disabled {
-            cursor: not-allowed;
-            opacity: 0.65;
-        }
-
-        @keyframes entrar {
-            from { opacity: 0; transform: translateY(18px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @keyframes aparecer {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 520px) {
-            body {
-                padding: 16px 10px;
-            }
-
-            .container {
-                width: 100%;
-                padding: 30px 22px;
-                border-radius: 18px;
-            }
+        @media (max-width: 720px) {
+            body { padding: 12px 8px 55px; }
+            .app { padding: 18px 15px 24px; }
+            .masthead, .teacher-heading, .student-heading { align-items: flex-start; flex-direction: column; }
+            .auth { justify-content: flex-start; }
+            .access-grid { grid-template-columns: 1fr; gap: 13px; }
+            .toolbar { justify-content: flex-start; }
+            .toggles { gap: 14px; }
+            .room-line { align-items: flex-start; flex-direction: column; }
+            .invite-row { flex-wrap: wrap; }
+            .import-controls { grid-template-columns: 1fr; }
+            .import-controls .button { width: 100%; }
+            .question-sheet { padding: 12px; }
+            .student-question { font-size: 19px; }
+            .results-table { min-width: 620px; }
         }
     </style>
 </head>
-
 <body>
-
-<div class="container">
-
-    <section id="inicio">
-        <h1>QuizConnect</h1>
-
-        <p class="subtitulo">Desafie seus conhecimentos de Análise e Desenvolvimento de Sistemas.</p>
-
-        <select class="campo-disciplina" id="disciplinaSelecionada" aria-label="Escolha a disciplina">
-            <option value="Todas">Todas as disciplinas</option>
-            <option value="Programação">Programação</option>
-            <option value="Banco de Dados">Banco de Dados</option>
-            <option value="Engenharia de Software">Engenharia de Software</option>
-            <option value="Redes de Computadores">Redes de Computadores</option>
-            <option value="Sistemas Operacionais">Sistemas Operacionais</option>
-            <option value="Algoritmos e Programação Estruturada">Algoritmos e Programação Estruturada</option>
-            <option value="Linguagem Orientada a Objetos">Linguagem Orientada a Objetos</option>
-            <option value="Programação Web">Programação Web</option>
-            <option value="Sistemas Distribuídos">Sistemas Distribuídos</option>
-            <option value="Desenvolvimento Mobile">Desenvolvimento Mobile</option>
-            <option value="Computação em Nuvem">Computação em Nuvem</option>
-        </select>
-
-        <button class="criar" onclick="criarSala()">
-            Criar Sala
-        </button>
-
-        <button class="entrar" onclick="entrarSala()">
-            Entrar em uma Sala
-        </button>
-    </section>
-
-    <section class="lobby" id="lobby">
-        <h2>Lobby</h2>
-        <div id="disciplinaSala"></div>
-        <div>Código da sala</div>
-        <div class="codigo-area">
-            <input id="codigoSala" type="text" readonly aria-label="Código da sala">
-            <button class="copiar" onclick="copiarCodigo()">Copiar</button>
-            <span class="status-copia" id="statusCopia" role="status"></span>
+<main class="app">
+    <header class="masthead">
+        <div>
+            <p class="eyebrow">QuizConnect</p>
+            <h1 class="brand">Quiz de Tecnologia<small>Atividades e avaliações em sala</small></h1>
         </div>
-        <p>Jogadores conectados</p>
-        <ul id="jogadores"></ul>
-        <button class="criar" id="botaoIniciarQuiz" onclick="iniciarQuiz()">Iniciar Quiz</button>
-        <button class="inicio-novo" onclick="voltarInicio()">Voltar à página inicial</button>
-    </section>
-
-    <section class="quiz" id="quiz">
-        <h2>Quiz de ADS</h2>
-        <h3 id="disciplina"></h3>
-        <p id="contador"></p>
-        <p id="pontuacao">Pontuação: 0</p>
-        <p id="enunciado"></p>
-        <div class="alternativas" id="alternativas"></div>
-        <button class="proxima" id="proxima" onclick="proximaPergunta()" disabled>Próxima</button>
-        <div class="resultado" id="resultado">
-            <h3>Ranking da partida</h3>
-            <div id="resultadoTexto"></div>
+        <div class="auth">
+            <span class="auth-state" id="authState">Verificando acesso...</span>
+            <button class="button neutral" id="logoutButton" type="button" hidden onclick="logoutProfessor()">Sair</button>
         </div>
-        <button class="sair" onclick="sairDoQuiz()">Sair do Quiz</button>
+    </header>
+
+    <section id="home" class="welcome">
+        <h1>Entrar ou criar atividade</h1>
+        <p>Professores criam e acompanham os quizzes. Alunos entram somente com o código e o nome.</p>
+        <div class="access-grid">
+            <section class="access-panel" aria-labelledby="createTitle">
+                <h2 id="createTitle">Professor</h2>
+                <p>Acesse sua conta QuizConnect com e-mail e senha para criar atividades.</p>
+                <div class="auth-modes" role="tablist" aria-label="Acesso do professor">
+                    <button class="button selected" id="loginMode" type="button" role="tab" aria-selected="true" onclick="setAuthMode('login')">Entrar</button>
+                    <button class="button neutral" id="registerMode" type="button" role="tab" aria-selected="false" onclick="setAuthMode('register')">Criar conta</button>
+                </div>
+                <form id="authForm" onsubmit="submitAuth(event)">
+                    <div id="registerUsernameField" hidden>
+                        <label for="registerUsername">Usuário</label>
+                        <input id="registerUsername" maxlength="32" autocomplete="username" disabled>
+                    </div>
+                    <div id="registerNameField" hidden>
+                        <label for="registerName">Nome completo</label>
+                        <input id="registerName" maxlength="100" autocomplete="name" disabled>
+                    </div>
+                    <label id="authLoginLabel" for="authLogin">Usuário ou e-mail</label>
+                    <input id="authLogin" type="text" maxlength="254" autocomplete="username" required>
+                    <label for="authPassword">Senha do QuizConnect</label>
+                    <input id="authPassword" type="password" maxlength="72" autocomplete="current-password" required>
+                    <p class="hint" id="passwordHint" hidden>Use pelo menos 12 caracteres. Não use a senha do Gmail.</p>
+                    <button class="button primary" id="authSubmit" type="submit">Entrar</button>
+                </form>
+                <p class="message" id="authMessage" role="status"></p>
+                <div id="createFields" hidden>
+                    <label for="quizTitle">Nome da atividade</label>
+                    <input id="quizTitle" maxlength="80" placeholder="Ex.: Revisão de Sistemas Distribuídos">
+                    <button class="button primary" id="createQuiz" type="button" onclick="createQuiz()">Criar atividade</button>
+                    <p class="message" id="createMessage" role="status"></p>
+                </div>
+            </section>
+            <section class="access-panel" aria-labelledby="joinTitle">
+                <h2 id="joinTitle">Aluno</h2>
+                <p>Informe o código compartilhado pelo professor e seu nome.</p>
+                <form onsubmit="joinQuiz(event)">
+                    <label for="joinCode">Código da atividade</label>
+                    <input id="joinCode" maxlength="8" autocomplete="off" required>
+                    <label for="studentName">Seu nome</label>
+                    <input id="studentName" maxlength="50" autocomplete="name" required>
+                    <button class="button primary" type="submit">Entrar</button>
+                </form>
+                <p class="message" id="joinMessage" role="status"></p>
+            </section>
+        </div>
     </section>
 
-</div>
+    <section id="teacher" class="teacher" hidden>
+        <div class="teacher-heading">
+            <div>
+                <p class="eyebrow">Painel do professor</p>
+                <h1 id="teacherTitle"></h1>
+                <p class="room-code">Código da atividade: <strong id="teacherCode"></strong></p>
+            </div>
+            <div class="toolbar">
+                <button class="button" id="pauseButton" type="button" onclick="togglePause()">Ⅱ Pausar</button>
+                <button class="button" id="finishButton" type="button" onclick="finishActivity()">✓ Encerrar atividade</button>
+                <button class="button primary" type="button" onclick="inviteStudents()">♧ Convidar alunos</button>
+            </div>
+        </div>
+        <div class="room-line">
+            <div class="invite-row">
+                <span id="activityStatus" class="room-status"></span>
+                <input id="inviteCode" readonly aria-label="Código para convidar alunos">
+                <button class="button neutral small" type="button" onclick="copyCode()">Copiar código</button>
+            </div>
+            <button class="button neutral small" type="button" onclick="leaveRoom()">Sair do painel</button>
+        </div>
+        <div class="toggles" aria-label="Opções de visualização do painel">
+            <label class="toggle"><input id="showNames" type="checkbox" checked onchange="renderBoard()"><span class="toggle-track"></span><span>Mostrar nomes</span></label>
+            <label class="toggle"><input id="showResponses" type="checkbox" checked onchange="renderBoard()"><span class="toggle-track"></span><span>Mostrar respostas</span></label>
+            <label class="toggle"><input id="showResults" type="checkbox" checked onchange="renderBoard()"><span class="toggle-track"></span><span>Mostrar resultados</span></label>
+        </div>
+        <p class="message" id="teacherMessage" role="status"></p>
+        <div class="table-wrap">
+            <table class="results-table" aria-label="Respostas dos alunos por questão">
+                <thead id="boardHead"></thead>
+                <tbody id="boardBody"></tbody>
+                <tfoot id="boardFoot"></tfoot>
+            </table>
+        </div>
+        <section class="editor" id="editor">
+            <div class="section-heading">
+                <div>
+                    <h2>Questões da atividade</h2>
+                    <p>Importe, escreva ou revise pergunta, gabarito e três distratores.</p>
+                </div>
+                <button class="button primary" type="button" onclick="newQuestion()">＋ Nova questão</button>
+            </div>
+            <div class="import-controls">
+                <div>
+                    <label for="importCount">Quantidade</label>
+                    <select id="importCount"><option value="5">5 questões</option><option value="3">3 questões</option></select>
+                </div>
+                <div>
+                    <label for="importDifficulty">Dificuldade</label>
+                    <select id="importDifficulty"><option value="">Variada</option><option value="easy">Fácil</option><option value="medium">Intermediária</option><option value="hard">Difícil</option></select>
+                </div>
+                <button class="button" id="importButton" type="button" onclick="importQuestions()">Importar e traduzir</button>
+            </div>
+            <p class="hint">A importação consulta OpenTDB e MyMemory somente quando acionada. As alternativas incorretas não são importadas.</p>
+            <p class="message" id="editorMessage" role="status"></p>
+            <div class="question-list" id="questionList"></div>
+        </section>
+    </section>
+
+    <section id="student" class="student" hidden>
+        <div class="student-heading">
+            <div>
+                <p class="eyebrow">Atividade</p>
+                <h1 id="studentTitle"></h1>
+            </div>
+            <button class="button neutral small" type="button" onclick="leaveRoom()">Sair</button>
+        </div>
+        <div class="student-quiz">
+            <p class="message" id="studentMessage" role="status"></p>
+            <div id="questionView" hidden>
+                <p class="progress" id="questionProgress"></p>
+                <h2 class="student-question" id="questionText"></h2>
+                <div class="answer-options" id="answerOptions"></div>
+                <div class="student-next">
+                    <button class="button primary" id="nextQuestion" type="button" onclick="nextQuestion()" disabled>Próxima questão</button>
+                </div>
+                <p class="student-score" id="studentScore"></p>
+            </div>
+            <div class="finish-ranking" id="studentRanking" hidden></div>
+        </div>
+    </section>
+</main>
+
+<a class="credits" href="https://www.socrative.com/" target="_blank" rel="noopener noreferrer">Inspired By Socrative</a>
 
 <script>
+    let csrfToken = '';
+    let loggedIn = false;
+    let authMode = 'login';
+    let currentCode = '';
+    let currentRole = '';
+    let currentParticipantId = '';
+    let currentBoard = null;
+    let gameQuestions = [];
+    let gameIndex = 0;
+    let roomPoll = null;
+    let csrfReady;
 
-    async function criarSala() {
+    async function loadCsrf() {
         try {
-            const disciplina = document.getElementById('disciplinaSelecionada').value;
-            const resposta = await fetch('/api/salas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ disciplina: disciplina })
-            });
-
-            if (!resposta.ok) {
-                throw new Error('Falha ao criar a sala');
-            }
-
-            const dados = await resposta.json();
-            mostrarLobby(dados.codigo, dados.disciplina);
-        } catch (erro) {
-            console.error(erro);
-            alert("Não foi possível criar a sala.");
+            const response = await fetch('/api/auth/csrf');
+            if (response.ok) csrfToken = (await response.json()).token;
+        } catch (error) {
+            console.error('Não foi possível iniciar a proteção da sessão.', error);
         }
     }
 
-    async function entrarSala() {
-        const codigo = prompt("Digite o código da sala:");
-        const nome = prompt("Digite seu nome:");
-
-        if (!codigo || !nome) {
-            alert("Código e nome são obrigatórios.");
-            return;
+    async function apiFetch(url, options = {}) {
+        const method = (options.method || 'GET').toUpperCase();
+        const headers = new Headers(options.headers || {});
+        if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+            await csrfReady;
+            headers.set('X-CSRF-TOKEN', csrfToken);
         }
+        return fetch(url, { ...options, headers, credentials: 'same-origin' });
+    }
 
+    async function readJson(response) {
+        const text = await response.text();
+        try { return text ? JSON.parse(text) : {}; }
+        catch { return { mensagem: 'Resposta inválida do servidor.' }; }
+    }
+
+    async function checkLogin() {
         try {
-            const resposta = await fetch('/api/salas/entrar', {
+            const profile = await readJson(await apiFetch('/api/auth/me'));
+            loggedIn = profile.authenticated === true;
+            document.getElementById('authState').textContent = loggedIn
+                ? `${profile.nome} · Professor` : 'Professor: entre ou crie sua conta';
+            document.getElementById('logoutButton').hidden = !loggedIn;
+            document.getElementById('authForm').hidden = loggedIn;
+            document.querySelector('.auth-modes').hidden = loggedIn;
+            document.getElementById('createFields').hidden = !loggedIn;
+            document.getElementById('createMessage').textContent = loggedIn
+                ? 'Atividades vinculadas a esta conta.' : '';
+            return profile;
+        } catch (error) {
+            document.getElementById('authState').textContent = 'Acesso indisponível';
+            return { authenticated: false, googleConfigured: false };
+        }
+    }
+
+    function setAuthMode(mode) {
+        authMode = mode;
+        const registering = mode === 'register';
+        const usernameField = document.getElementById('registerUsername');
+        const nameField = document.getElementById('registerName');
+        document.getElementById('registerUsernameField').hidden = !registering;
+        usernameField.disabled = !registering;
+        usernameField.required = registering;
+        document.getElementById('registerNameField').hidden = !registering;
+        nameField.disabled = !registering;
+        nameField.required = registering;
+        document.getElementById('authLoginLabel').textContent = registering ? 'E-mail' : 'Usuário ou e-mail';
+        document.getElementById('authLogin').type = registering ? 'email' : 'text';
+        document.getElementById('authLogin').autocomplete = registering ? 'email' : 'username';
+        document.getElementById('passwordHint').hidden = !registering;
+        document.getElementById('authPassword').autocomplete = registering ? 'new-password' : 'current-password';
+        document.getElementById('authSubmit').textContent = registering ? 'Criar conta' : 'Entrar';
+        document.getElementById('loginMode').classList.toggle('selected', !registering);
+        document.getElementById('loginMode').classList.toggle('neutral', registering);
+        document.getElementById('loginMode').setAttribute('aria-selected', String(!registering));
+        document.getElementById('registerMode').classList.toggle('selected', registering);
+        document.getElementById('registerMode').classList.toggle('neutral', !registering);
+        document.getElementById('registerMode').setAttribute('aria-selected', String(registering));
+        document.getElementById('authMessage').textContent = '';
+        document.getElementById('authMessage').classList.remove('error');
+    }
+
+    async function submitAuth(event) {
+        event.preventDefault();
+        const login = document.getElementById('authLogin').value.trim();
+        const password = document.getElementById('authPassword').value;
+        const status = document.getElementById('authMessage');
+        const submit = document.getElementById('authSubmit');
+        status.classList.remove('error');
+        submit.disabled = true;
+        try {
+            if (authMode === 'register') {
+                const registration = await apiFetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: document.getElementById('registerUsername').value.trim(),
+                        nome: document.getElementById('registerName').value.trim(),
+                        email: login,
+                        senha: password
+                    })
+                });
+                const data = await readJson(registration);
+                if (!registration.ok) throw new Error(data.mensagem || 'Não foi possível criar a conta.');
+                setAuthMode('login');
+                status.textContent = 'Conta criada. Entrando...';
+            }
+
+            const credentials = new URLSearchParams({ login, senha: password });
+            const loginResponse = await apiFetch('/api/auth/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: credentials
+            });
+            const loginResult = await readJson(loginResponse);
+            if (!loginResponse.ok) throw new Error(loginResult.mensagem || 'Usuário/e-mail ou senha inválidos.');
+            status.textContent = '';
+            await loadCsrf();
+            await checkLogin();
+        } catch (error) {
+            status.textContent = error.message;
+            status.classList.add('error');
+        } finally {
+            submit.disabled = false;
+        }
+    }
+
+    async function createQuiz() {
+        if (!loggedIn) return;
+        const message = document.getElementById('createMessage');
+        try {
+            const response = await apiFetch('/api/salas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo: document.getElementById('quizTitle').value })
+            });
+            const data = await readJson(response);
+            if (!response.ok) throw new Error(data.mensagem || 'Não foi possível criar a atividade.');
+            enterTeacherRoom(data.codigo);
+        } catch (error) {
+            message.textContent = error.message;
+            message.classList.add('error');
+        }
+    }
+
+    async function joinQuiz(event) {
+        event.preventDefault();
+        const message = document.getElementById('joinMessage');
+        message.classList.remove('error');
+        try {
+            const response = await apiFetch('/api/salas/entrar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    codigo: codigo,
-                    nome: nome
+                    codigo: document.getElementById('joinCode').value.trim().toUpperCase(),
+                    nome: document.getElementById('studentName').value.trim()
                 })
             });
-
-            const dados = await resposta.json();
-
-            if (!resposta.ok) {
-                throw new Error(dados.mensagem || 'Erro ao entrar na sala');
-            }
-
-            alert("Entrou com sucesso!\n" + dados.mensagem);
-            mostrarLobby(dados.codigo, dados.disciplina);
-        } catch (erro) {
-            console.error(erro);
-            alert(erro.message);
+            const data = await readJson(response);
+            if (!response.ok) throw new Error(data.mensagem || 'Não foi possível entrar.');
+            currentCode = data.codigo;
+            currentRole = 'ALUNO';
+            currentParticipantId = data.participantId;
+            sessionStorage.setItem('quizconnectRoom', JSON.stringify({
+                codigo: currentCode, papel: currentRole, participantId: currentParticipantId,
+                nome: data.nome, titulo: data.titulo
+            }));
+            showStudent(data.titulo);
+            await startGame();
+        } catch (error) {
+            message.textContent = error.message;
+            message.classList.add('error');
         }
     }
 
-    function mostrarLobby(codigo, disciplina) {
-        // Troca a tela inicial pelo lobby da sala atual.
-        document.getElementById('inicio').style.display = 'none';
-        document.getElementById('lobby').style.display = 'block';
-        document.getElementById('codigoSala').value = codigo;
-        disciplinaDaSala = disciplina || '';
-        document.getElementById('disciplinaSala').textContent = disciplina || 'Quiz geral';
-        atualizarLobby(codigo);
-
-        setInterval(() => atualizarLobby(codigo), 3000);
+    function enterTeacherRoom(code) {
+        currentCode = code;
+        currentRole = 'PROFESSOR';
+        sessionStorage.setItem('quizconnectRoom', JSON.stringify({ codigo: code, papel: currentRole }));
+        document.getElementById('home').hidden = true;
+        document.getElementById('student').hidden = true;
+        document.getElementById('teacher').hidden = false;
+        document.getElementById('teacherCode').textContent = code;
+        document.getElementById('inviteCode').value = code;
+        document.getElementById('teacherTitle').textContent = document.getElementById('quizTitle').value.trim() || 'Quiz de Tecnologia';
+        loadQuestions();
+        refreshTeacherBoard();
+        clearInterval(roomPoll);
+        roomPoll = setInterval(refreshTeacherBoard, 3000);
     }
 
-    async function copiarCodigo() {
-        const campoCodigo = document.getElementById('codigoSala');
-        const status = document.getElementById('statusCopia');
-        campoCodigo.select();
-        await navigator.clipboard.writeText(campoCodigo.value);
-        status.textContent = 'Copiado';
-        status.classList.add('visivel');
-        setTimeout(() => status.classList.remove('visivel'), 1800);
+    function showStudent(title) {
+        document.getElementById('home').hidden = true;
+        document.getElementById('teacher').hidden = true;
+        document.getElementById('student').hidden = false;
+        document.getElementById('studentTitle').textContent = title || 'Quiz de Tecnologia';
+        clearInterval(roomPoll);
+        roomPoll = setInterval(refreshStudentStatus, 3000);
     }
 
-    async function atualizarLobby(codigo) {
+    async function refreshTeacherBoard() {
+        if (!currentCode || currentRole !== 'PROFESSOR') return;
         try {
-            const resposta = await fetch('/api/salas/' + encodeURIComponent(codigo));
-
-            if (!resposta.ok) {
-                return;
-            }
-
-            const dados = await resposta.json();
-            const lista = document.getElementById('jogadores');
-            lista.innerHTML = '';
-
-            dados.jogadores.forEach(nome => {
-                const jogador = document.createElement('li');
-                jogador.textContent = nome;
-                lista.appendChild(jogador);
-            });
-        } catch (erro) {
-            console.error('Não foi possível atualizar o lobby.', erro);
+            const response = await apiFetch(`/api/salas/${encodeURIComponent(currentCode)}/professor`);
+            const data = await readJson(response);
+            if (!response.ok) throw new Error(data.mensagem || 'Não foi possível atualizar o painel.');
+            currentBoard = data;
+            document.getElementById('teacherTitle').textContent = data.titulo;
+            document.getElementById('activityStatus').textContent = data.finalizada
+                ? 'Atividade encerrada' : data.pausada ? 'Atividade pausada' : 'Atividade em andamento';
+            document.getElementById('pauseButton').textContent = data.pausada ? '▶ Retomar' : 'Ⅱ Pausar';
+            document.getElementById('pauseButton').disabled = data.finalizada;
+            document.getElementById('finishButton').disabled = data.finalizada;
+            renderBoard();
+        } catch (error) {
+            document.getElementById('teacherMessage').textContent = error.message;
         }
     }
 
-    let perguntas = [];
-    let perguntaAtual = 0;
-    let pontuacao = 0;
-    let audioContext;
-    let quizFinalizado = false;
-    let disciplinaDaSala = '';
+    function renderBoard() {
+        if (!currentBoard) return;
+        const head = document.getElementById('boardHead');
+        const body = document.getElementById('boardBody');
+        const foot = document.getElementById('boardFoot');
+        head.replaceChildren();
+        body.replaceChildren();
+        foot.replaceChildren();
+        const questions = currentBoard.questoes;
+        const students = currentBoard.alunos;
+        const showNames = document.getElementById('showNames').checked;
+        const showResponses = document.getElementById('showResponses').checked;
+        const showResults = document.getElementById('showResults').checked;
 
-    async function iniciarQuiz() {
-        try {
-            // Cada jogador recebe sua propria ordem de perguntas e alternativas.
-            const resposta = await fetch('/api/perguntas?disciplina=' + encodeURIComponent(disciplinaDaSala));
-
-            if (!resposta.ok) {
-                throw new Error('Não foi possível carregar as perguntas.');
-            }
-
-            perguntas = await resposta.json();
-
-            if (perguntas.length === 0) {
-                alert('Ainda não há perguntas cadastradas para esta disciplina.');
-                return;
-            }
-
-            perguntaAtual = 0;
-            pontuacao = 0;
-            quizFinalizado = false;
-            document.getElementById('pontuacao').textContent = 'Pontuação: 0';
-            document.getElementById('resultado').style.display = 'none';
-            document.getElementById('botaoIniciarQuiz').style.display = 'none';
-            document.getElementById('lobby').style.display = 'none';
-            document.getElementById('quiz').style.display = 'block';
-            mostrarPergunta();
-        } catch (erro) {
-            alert(erro.message);
-        }
-    }
-
-    function mostrarPergunta() {
-        const pergunta = perguntas[perguntaAtual];
-        document.getElementById('disciplina').textContent = pergunta.disciplina;
-        document.getElementById('contador').textContent =
-            'Pergunta ' + (perguntaAtual + 1) + ' de ' + perguntas.length;
-        document.getElementById('enunciado').textContent = pergunta.enunciado;
-
-        const alternativas = document.getElementById('alternativas');
-        alternativas.innerHTML = '';
-        document.getElementById('proxima').disabled = true;
-
-        pergunta.alternativas.forEach(alternativa => {
-            const botao = document.createElement('button');
-            botao.className = 'alternativa';
-            botao.textContent = alternativa;
-            botao.onclick = () => selecionarAlternativa(botao);
-            alternativas.appendChild(botao);
+        const header = document.createElement('tr');
+        const nameHeader = document.createElement('th');
+        nameHeader.textContent = 'NOME';
+        header.appendChild(nameHeader);
+        const scoreHeader = document.createElement('th');
+        scoreHeader.textContent = 'PONTUAÇÃO';
+        scoreHeader.hidden = !showResults;
+        header.appendChild(scoreHeader);
+        questions.forEach((question, index) => {
+            const cell = document.createElement('th');
+            cell.className = 'question-col';
+            cell.textContent = String(index + 1);
+            cell.title = question.enunciado;
+            header.appendChild(cell);
         });
+        head.appendChild(header);
+
+        if (students.length === 0) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = questions.length + 2;
+            cell.className = 'empty-row';
+            cell.textContent = 'Os alunos que entrarem pelo código aparecerão aqui.';
+            row.appendChild(cell);
+            body.appendChild(row);
+        }
+
+        students.forEach((student, studentIndex) => {
+            const row = document.createElement('tr');
+            const name = document.createElement('td');
+            name.className = 'student-name';
+            const dot = document.createElement('span');
+            dot.className = 'presence';
+            name.appendChild(dot);
+            name.append(document.createTextNode(showNames ? student.nome : `Aluno ${studentIndex + 1}`));
+            row.appendChild(name);
+            const score = document.createElement('td');
+            score.className = 'score-cell';
+            score.hidden = !showResults;
+            score.textContent = showResults && questions.length
+                ? `${Math.round(student.pontuacao * 100 / questions.length)}%` : showResults ? '0%' : '';
+            row.appendChild(score);
+            questions.forEach(question => {
+                const cell = document.createElement('td');
+                const answer = student.respostas[String(question.id)];
+                if (showResponses && answer) {
+                    cell.classList.add(answer.correta ? 'answer-correct' : 'answer-wrong');
+                    cell.textContent = `${answer.correta ? '✓' : '×'} ${answer.resposta}`;
+                }
+                row.appendChild(cell);
+            });
+            body.appendChild(row);
+        });
+
+        const totals = document.createElement('tr');
+        const totalLabel = document.createElement('td');
+        totalLabel.colSpan = showResults ? 2 : 1;
+        totalLabel.textContent = `${students.length} ${students.length === 1 ? 'aluno' : 'alunos'} · Total da turma`;
+        totals.appendChild(totalLabel);
+        questions.forEach(question => {
+            const cell = document.createElement('td');
+            const answered = students.filter(student => student.respostas[String(question.id)]);
+            const correct = answered.filter(student => student.respostas[String(question.id)].correta).length;
+            cell.textContent = showResults && students.length ? `${Math.round(correct * 100 / students.length)}%` : '';
+            totals.appendChild(cell);
+        });
+        foot.appendChild(totals);
     }
 
-    async function selecionarAlternativa(botaoSelecionado) {
-        // A resposta e validada no backend para manter o gabarito protegido.
-        const pergunta = perguntas[perguntaAtual];
-        const botoes = document.querySelectorAll('.alternativa');
+    async function togglePause() {
+        if (!currentBoard) return;
+        await changeRoomStatus({ pausada: !currentBoard.pausada, finalizada: currentBoard.finalizada });
+    }
 
-        botoes.forEach(botao => botao.disabled = true);
+    async function finishActivity() {
+        if (!confirm('Encerrar a atividade? Os alunos não poderão continuar respondendo.')) return;
+        await changeRoomStatus({ pausada: false, finalizada: true });
+    }
 
+    async function changeRoomStatus(state) {
         try {
-            const resposta = await fetch('/api/perguntas/' + pergunta.id + '/responder', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ resposta: botaoSelecionado.textContent })
+            const response = await apiFetch(`/api/salas/${encodeURIComponent(currentCode)}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(state)
             });
-
-            const resultado = await resposta.json();
-
-            if (resultado.correta) {
-                botaoSelecionado.classList.add('correta');
-                pontuacao += 1;
-                document.getElementById('pontuacao').textContent = 'Pontuação: ' + pontuacao;
-                tocarSom(true);
-            } else {
-                botaoSelecionado.classList.add('errada');
-                botoes.forEach(botao => {
-                    if (botao.textContent === resultado.respostaCorreta) {
-                        botao.classList.add('correta');
-                    }
-                });
-                tocarSom(false);
-            }
-
-            document.getElementById('proxima').disabled = false;
-        } catch (erro) {
-            botoes.forEach(botao => botao.disabled = false);
-            alert('Não foi possível verificar a resposta.');
+            const data = await readJson(response);
+            if (!response.ok) throw new Error(data.mensagem || 'Não foi possível atualizar a atividade.');
+            currentBoard = { ...currentBoard, ...data };
+            await refreshTeacherBoard();
+        } catch (error) {
+            document.getElementById('teacherMessage').textContent = error.message;
         }
     }
 
-    function tocarSom(acertou) {
-        audioContext = audioContext || new AudioContext();
-        const oscilador = audioContext.createOscillator();
-        const ganho = audioContext.createGain();
-        const agora = audioContext.currentTime;
-
-        oscilador.type = 'sine';
-        oscilador.frequency.setValueAtTime(acertou ? 660 : 220, agora);
-        oscilador.frequency.exponentialRampToValueAtTime(acertou ? 880 : 150, agora + 0.16);
-        ganho.gain.setValueAtTime(0.0001, agora);
-        ganho.gain.exponentialRampToValueAtTime(0.16, agora + 0.02);
-        ganho.gain.exponentialRampToValueAtTime(0.0001, agora + 0.2);
-
-        oscilador.connect(ganho);
-        ganho.connect(audioContext.destination);
-        oscilador.start(agora);
-        oscilador.stop(agora + 0.2);
+    async function inviteStudents() {
+        await copyCode();
+        document.getElementById('teacherMessage').textContent = 'Código copiado. Compartilhe com os alunos.';
     }
 
-    function proximaPergunta() {
-        if (perguntaAtual === perguntas.length - 1) {
-            quizFinalizado = true;
-            document.getElementById('proxima').disabled = true;
-            document.getElementById('resultadoTexto').innerHTML =
-                'Jogador atual<br><strong>' + pontuacao + ' / ' + perguntas.length + '</strong>';
-            document.getElementById('resultado').style.display = 'block';
-            tocarMusicaFinal();
+    async function copyCode() {
+        try {
+            await navigator.clipboard.writeText(currentCode);
+            document.getElementById('teacherMessage').textContent = 'Código copiado.';
+        } catch (error) {
+            document.getElementById('inviteCode').select();
+            document.execCommand('copy');
+            document.getElementById('teacherMessage').textContent = 'Código selecionado para copiar.';
+        }
+    }
+
+    async function loadQuestions() {
+        const list = document.getElementById('questionList');
+        try {
+            const response = await apiFetch(`/api/salas/${encodeURIComponent(currentCode)}/questoes`);
+            const questions = await readJson(response);
+            if (!response.ok) throw new Error(questions.mensagem || 'Não foi possível carregar as questões.');
+            list.replaceChildren();
+            questions.forEach(question => list.appendChild(questionForm(question)));
+            document.getElementById('editorMessage').textContent = questions.length
+                ? `${questions.length} questões nesta atividade.` : 'Adicione sua primeira questão ou importe questões em português.';
+        } catch (error) {
+            document.getElementById('editorMessage').textContent = error.message;
+            document.getElementById('editorMessage').classList.add('error');
+        }
+    }
+
+    function questionForm(question = null) {
+        const form = document.createElement('form');
+        form.className = 'question-sheet';
+        form.dataset.questionId = question ? question.id : '';
+        form.onsubmit = event => saveQuestion(event, form);
+        const head = document.createElement('div');
+        head.className = 'question-sheet-head';
+        const heading = document.createElement('strong');
+        heading.textContent = question ? `Questão ${question.ordem + 1}` : 'Nova questão';
+        const source = document.createElement('span');
+        source.className = 'source';
+        source.textContent = question ? question.fonte : 'Manual';
+        head.append(heading, source);
+        form.appendChild(head);
+
+        addQuestionField(form, 'Pergunta em português', 'enunciado', question?.enunciado || '', 500, 2, false);
+        addQuestionField(form, 'Resposta correta', 'respostaCorreta', question?.respostaCorreta || '', 120, 2, true);
+        const wrongAnswers = question?.distratores || ['', '', ''];
+        for (let index = 0; index < 3; index++) {
+            addQuestionField(form, `Resposta incorreta ${index + 1}`, `distrator${index + 1}`,
+                wrongAnswers[index] || '', 100, 2, false);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'question-actions';
+        const suggest = document.createElement('button');
+        suggest.type = 'button';
+        suggest.className = 'button';
+        suggest.textContent = '✦ Sugerir distratores com IA gratuita';
+        suggest.onclick = () => suggestDistractors(form, suggest);
+        actions.appendChild(suggest);
+        const save = document.createElement('button');
+        save.type = 'submit';
+        save.className = 'button primary';
+        save.textContent = 'Salvar questão';
+        actions.appendChild(save);
+        if (question) {
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'button danger';
+            remove.textContent = 'Remover';
+            remove.onclick = () => removeQuestion(question.id);
+            actions.appendChild(remove);
+        }
+        form.appendChild(actions);
+        const status = document.createElement('p');
+        status.className = 'question-message';
+        status.setAttribute('role', 'status');
+        form.appendChild(status);
+        return form;
+    }
+
+    function addQuestionField(form, labelText, name, value, maxLength, rows, correct) {
+        const label = document.createElement('label');
+        label.textContent = labelText;
+        const field = document.createElement('textarea');
+        field.name = name;
+        field.maxLength = maxLength;
+        field.rows = rows;
+        field.value = value;
+        field.required = name === 'enunciado' || name === 'respostaCorreta';
+        field.className = correct ? 'correct-answer' : name.startsWith('distrator') ? 'wrong-answer' : '';
+        if (name.startsWith('distrator')) field.placeholder = 'Digite uma alternativa incorreta (até 2 linhas)';
+        label.htmlFor = `${name}-${Math.random().toString(36).slice(2, 8)}`;
+        field.id = label.htmlFor;
+        form.append(label, field);
+    }
+
+    function questionPayload(form) {
+        return {
+            enunciado: form.elements.enunciado.value.trim(),
+            respostaCorreta: form.elements.respostaCorreta.value.trim(),
+            distratores: [1, 2, 3].map(index => form.elements[`distrator${index}`].value.trim())
+        };
+    }
+
+    async function saveQuestion(event, form) {
+        event.preventDefault();
+        const status = form.querySelector('.question-message');
+        status.classList.remove('error');
+        const questionId = form.dataset.questionId;
+        const url = `/api/salas/${encodeURIComponent(currentCode)}/questoes${questionId ? `/${questionId}` : ''}`;
+        try {
+            const response = await apiFetch(url, {
+                method: questionId ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(questionPayload(form))
+            });
+            const data = await readJson(response);
+            if (!response.ok) throw new Error(data.mensagem || 'Não foi possível salvar a questão.');
+            status.textContent = 'Questão salva.';
+            await loadQuestions();
+        } catch (error) {
+            status.textContent = error.message;
+            status.classList.add('error');
+        }
+    }
+
+    async function suggestDistractors(form, button) {
+        const status = form.querySelector('.question-message');
+        if (!form.elements.enunciado.value.trim() || !form.elements.respostaCorreta.value.trim()) {
+            status.textContent = 'Preencha pergunta e resposta correta antes de pedir sugestões.';
+            status.classList.add('error');
             return;
         }
-
-        perguntaAtual += 1;
-        mostrarPergunta();
+        button.disabled = true;
+        status.classList.remove('error');
+        status.textContent = 'Gerando três sugestões. A pergunta e o gabarito serão enviados ao serviço de IA.';
+        try {
+            const response = await apiFetch(`/api/salas/${encodeURIComponent(currentCode)}/sugestoes-distratores`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    enunciado: form.elements.enunciado.value.trim(),
+                    respostaCorreta: form.elements.respostaCorreta.value.trim()
+                })
+            });
+            const data = await readJson(response);
+            if (!response.ok) throw new Error(data.mensagem || 'Não foi possível gerar sugestões.');
+            data.distratores.forEach((answer, index) => { form.elements[`distrator${index + 1}`].value = answer; });
+            status.textContent = 'Sugestões preenchidas. Revise e salve a questão.';
+        } catch (error) {
+            status.textContent = error.message;
+            status.classList.add('error');
+        } finally {
+            button.disabled = false;
+        }
     }
 
-    function sairDoQuiz() {
-        document.getElementById('quiz').style.display = 'none';
-        document.getElementById('lobby').style.display = 'block';
-        document.getElementById('botaoIniciarQuiz').style.display = 'block';
-        perguntas = [];
-        perguntaAtual = 0;
-        pontuacao = 0;
-        quizFinalizado = false;
+    function newQuestion() {
+        const list = document.getElementById('questionList');
+        const form = questionForm();
+        list.prepend(form);
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        form.elements.enunciado.focus();
     }
 
-    function voltarInicio() {
-        // Limpa o estado da tela sem reiniciar o servidor.
-        document.getElementById('quiz').style.display = 'none';
-        document.getElementById('lobby').style.display = 'none';
-        document.getElementById('inicio').style.display = 'block';
-        document.getElementById('codigoSala').value = '';
-        document.getElementById('jogadores').innerHTML = '';
-        perguntas = [];
-        perguntaAtual = 0;
-        pontuacao = 0;
-        disciplinaDaSala = '';
+    async function removeQuestion(questionId) {
+        if (!confirm('Remover esta questão do quiz?')) return;
+        try {
+            const response = await apiFetch(`/api/salas/${encodeURIComponent(currentCode)}/questoes/${questionId}`, { method: 'DELETE' });
+            const data = await readJson(response);
+            if (!response.ok) throw new Error(data.mensagem || 'Não foi possível remover a questão.');
+            await loadQuestions();
+            await refreshTeacherBoard();
+        } catch (error) {
+            document.getElementById('editorMessage').textContent = error.message;
+            document.getElementById('editorMessage').classList.add('error');
+        }
     }
 
-    function tocarMusicaFinal() {
-        audioContext = audioContext || new AudioContext();
-        const notas = [523.25, 659.25, 783.99, 1046.5];
-        const agora = audioContext.currentTime;
+    async function importQuestions() {
+        const button = document.getElementById('importButton');
+        button.disabled = true;
+        const message = document.getElementById('editorMessage');
+        message.classList.remove('error');
+        message.textContent = 'Buscando e traduzindo questões. Isso pode levar alguns segundos...';
+        try {
+            const response = await apiFetch(`/api/salas/${encodeURIComponent(currentCode)}/importar-opentdb`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    quantidade: Number(document.getElementById('importCount').value),
+                    tipo: 'multiple',
+                    dificuldade: document.getElementById('importDifficulty').value
+                })
+            });
+            const data = await readJson(response);
+            if (!response.ok) throw new Error(data.mensagem || 'Não foi possível importar questões.');
+            message.textContent = `${data.importadas} perguntas traduzidas e adicionadas. Preencha os distratores em branco ou peça sugestões à IA.`;
+            await loadQuestions();
+            await refreshTeacherBoard();
+        } catch (error) {
+            message.textContent = error.message;
+            message.classList.add('error');
+        } finally {
+            button.disabled = false;
+        }
+    }
 
-        notas.forEach((frequencia, indice) => {
-            const oscilador = audioContext.createOscillator();
-            const ganho = audioContext.createGain();
-            const inicio = agora + indice * 0.16;
+    async function startGame() {
+        const message = document.getElementById('studentMessage');
+        try {
+            const response = await apiFetch(`/api/salas/${encodeURIComponent(currentCode)}/participantes/${encodeURIComponent(currentParticipantId)}/quiz`);
+            const data = await readJson(response);
+            if (!response.ok) throw new Error(data.mensagem || 'Não foi possível iniciar o quiz.');
+            gameQuestions = data.perguntas;
+            gameIndex = gameQuestions.findIndex(question => !question.respondida);
+            if (data.concluido) {
+                await showStudentRanking();
+                return;
+            }
+            document.getElementById('studentMessage').textContent = '';
+            document.getElementById('questionView').hidden = false;
+            renderGameQuestion();
+        } catch (error) {
+            message.textContent = error.message;
+            message.classList.add('error');
+        }
+    }
 
-            oscilador.type = 'sine';
-            oscilador.frequency.value = frequencia;
-            ganho.gain.setValueAtTime(0.0001, inicio);
-            ganho.gain.exponentialRampToValueAtTime(0.14, inicio + 0.03);
-            ganho.gain.exponentialRampToValueAtTime(0.0001, inicio + 0.22);
-            oscilador.connect(ganho);
-            ganho.connect(audioContext.destination);
-            oscilador.start(inicio);
-            oscilador.stop(inicio + 0.22);
+    function renderGameQuestion() {
+        const question = gameQuestions[gameIndex];
+        if (!question) return;
+        document.getElementById('questionProgress').textContent = `Questão ${gameIndex + 1} de ${gameQuestions.length}`;
+        document.getElementById('questionText').textContent = question.enunciado;
+        document.getElementById('studentScore').textContent = `Pontuação: ${gameQuestions.filter(item => item.correta).length}`;
+        const options = document.getElementById('answerOptions');
+        options.replaceChildren();
+        question.alternativas.forEach(answer => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'button';
+            button.textContent = answer;
+            if (question.respondida) {
+                button.disabled = true;
+                if (answer === question.respostaEscolhida) button.classList.add(question.correta ? 'answer-correct' : 'answer-wrong');
+                if (!question.correta && answer === question.respostaCorreta) button.classList.add('answer-correct');
+            } else {
+                button.onclick = () => submitAnswer(button, question);
+            }
+            options.appendChild(button);
         });
+        document.getElementById('nextQuestion').disabled = !question.respondida;
     }
 
+    async function submitAnswer(button, question) {
+        const options = document.querySelectorAll('#answerOptions button');
+        options.forEach(option => { option.disabled = true; });
+        try {
+            const response = await apiFetch(`/api/salas/${encodeURIComponent(currentCode)}/participantes/${encodeURIComponent(currentParticipantId)}/respostas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ perguntaId: question.id, resposta: button.textContent })
+            });
+            const data = await readJson(response);
+            if (!response.ok) throw new Error(data.mensagem || 'Não foi possível registrar a resposta.');
+            question.respondida = true;
+            question.respostaEscolhida = button.textContent;
+            question.correta = data.correta;
+            question.respostaCorreta = data.respostaCorreta;
+            renderGameQuestion();
+            document.getElementById('studentScore').textContent = `Pontuação: ${data.pontuacao}`;
+        } catch (error) {
+            options.forEach(option => { option.disabled = false; });
+            document.getElementById('studentMessage').textContent = error.message;
+            document.getElementById('studentMessage').classList.add('error');
+        }
+    }
+
+    async function nextQuestion() {
+        const next = gameQuestions.findIndex((question, index) => index > gameIndex && !question.respondida);
+        if (next < 0) {
+            await showStudentRanking();
+            return;
+        }
+        gameIndex = next;
+        renderGameQuestion();
+    }
+
+    async function showStudentRanking() {
+        document.getElementById('questionView').hidden = true;
+        const container = document.getElementById('studentRanking');
+        container.hidden = false;
+        container.replaceChildren();
+        const heading = document.createElement('h2');
+        heading.textContent = `Resultado: ${gameQuestions.filter(question => question.correta).length} de ${gameQuestions.length}`;
+        container.appendChild(heading);
+        try {
+            const ranking = await readJson(await apiFetch(`/api/salas/${encodeURIComponent(currentCode)}/ranking`));
+            const list = document.createElement('ol');
+            ranking.forEach(row => {
+                const item = document.createElement('li');
+                item.textContent = `${row.nome}: ${row.pontuacao} pontos`;
+                list.appendChild(item);
+            });
+            container.appendChild(list);
+        } catch (error) {
+            document.getElementById('studentMessage').textContent = 'Seu resultado foi salvo.';
+        }
+    }
+
+    async function refreshStudentStatus() {
+        if (!currentCode || currentRole !== 'ALUNO') return;
+        try {
+            const room = await readJson(await apiFetch(`/api/salas/${encodeURIComponent(currentCode)}`));
+            const message = document.getElementById('studentMessage');
+            if (room.finalizada) message.textContent = 'O professor encerrou a atividade.';
+            else if (room.pausada) message.textContent = 'A atividade está pausada.';
+            else if (!gameQuestions.length) message.textContent = '';
+        } catch (error) {
+            console.error('Não foi possível atualizar o estado da sala.', error);
+        }
+    }
+
+    async function logoutProfessor() {
+        await apiFetch('/api/auth/logout', { method: 'POST' });
+        sessionStorage.removeItem('quizconnectRoom');
+        window.location.reload();
+    }
+
+    function leaveRoom() {
+        clearInterval(roomPoll);
+        currentCode = '';
+        currentRole = '';
+        currentParticipantId = '';
+        currentBoard = null;
+        gameQuestions = [];
+        sessionStorage.removeItem('quizconnectRoom');
+        document.getElementById('teacher').hidden = true;
+        document.getElementById('student').hidden = true;
+        document.getElementById('home').hidden = false;
+    }
+
+    async function restoreSession(profile) {
+        const saved = sessionStorage.getItem('quizconnectRoom');
+        if (!saved) return;
+        try {
+            const room = JSON.parse(saved);
+            if (room.papel === 'PROFESSOR' && profile.authenticated) {
+                enterTeacherRoom(room.codigo);
+            } else if (room.papel === 'ALUNO' && room.participantId) {
+                currentCode = room.codigo;
+                currentRole = room.papel;
+                currentParticipantId = room.participantId;
+                document.getElementById('studentName').value = room.nome || '';
+                showStudent(room.titulo);
+                await startGame();
+            } else {
+                sessionStorage.removeItem('quizconnectRoom');
+            }
+        } catch (error) {
+            sessionStorage.removeItem('quizconnectRoom');
+        }
+    }
+
+    async function initialize() {
+        csrfReady = loadCsrf();
+        await csrfReady;
+        const profile = await checkLogin();
+        await restoreSession(profile);
+    }
+
+    initialize();
 </script>
+</body>
+</html>

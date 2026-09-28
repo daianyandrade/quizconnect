@@ -1,13 +1,11 @@
 package com.quizconnect;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,100 +14,86 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class SalaController {
 
-    // Temporario: sera substituido pelo repositorio SQL quando o banco for integrado.
-    private final Map<String, Sala> salas = new HashMap<>();
+    private final QuizService quizService;
 
-    @PostMapping("/api/salas")
-    public Map<String, String> criarSala(@RequestBody(required = false) Map<String, String> payload) {
-        String codigo = UUID.randomUUID()
-            .toString()
-            .substring(0, 6)
-            .toUpperCase();
-        String disciplina = payload == null || payload.get("disciplina") == null
-            ? "Todas"
-            : payload.get("disciplina");
-        if (disciplina.isBlank()) {
-            disciplina = "Todas";
-        }
-
-        salas.put(codigo, new Sala(codigo, disciplina));
-
-        return Map.of(
-            "codigo", codigo,
-            "disciplina", disciplina,
-            "mensagem", "Sala criada com sucesso!"
-        );
+    public SalaController(QuizService quizService) {
+        this.quizService = quizService;
     }
 
-    public Map<String, String> criarSala() {
-        return criarSala(Map.of());
+    @PostMapping("/api/salas")
+    public ResponseEntity<Map<String, Object>> criarSala(
+        @RequestBody Map<String, String> payload,
+        @AuthenticationPrincipal UserDetails user
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("mensagem", "Entre com sua conta de professor para criar um quiz."));
+        }
+        try {
+            return ResponseEntity.ok(quizService.criarQuiz(user.getUsername(), payload.get("titulo")));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", erro.getMessage()));
+        }
     }
 
     @PostMapping("/api/salas/entrar")
     public ResponseEntity<Map<String, Object>> entrarSala(@RequestBody Map<String, String> payload) {
-        String codigo = payload.get("codigo");
-        String nome = payload.get("nome");
-
-        if (codigo == null || nome == null || nome.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "mensagem", "Código e nome são obrigatórios."
-            ));
+        try {
+            return ResponseEntity.ok(quizService.entrarSala(payload.get("codigo"), payload.get("nome")));
+        } catch (IllegalStateException erro) {
+            return ResponseEntity.status(409).body(Map.of("mensagem", erro.getMessage()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", erro.getMessage()));
         }
-
-        Sala sala = salas.get(codigo.toUpperCase());
-
-        if (sala == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "mensagem", "Sala não encontrada."
-            ));
-        }
-
-        sala.addJogador(nome);
-
-        return ResponseEntity.ok(Map.of(
-            "mensagem", "Você entrou na sala!",
-            "codigo", codigo.toUpperCase(),
-            "disciplina", sala.getDisciplina(),
-            "jogadores", sala.getJogadores()
-        ));
     }
 
     @GetMapping("/api/salas/{codigo}")
-    public ResponseEntity<Map<String, Object>> consultarSala(@PathVariable String codigo) {
-        Sala sala = salas.get(codigo.toUpperCase());
-
-        if (sala == null) {
+    public ResponseEntity<?> consultarSala(@PathVariable String codigo) {
+        try {
+            return ResponseEntity.ok(quizService.consultarSala(codigo));
+        } catch (IllegalArgumentException erro) {
             return ResponseEntity.notFound().build();
         }
-
-        return ResponseEntity.ok(Map.of(
-            "codigo", codigo.toUpperCase(),
-            "disciplina", sala.getDisciplina(),
-            "jogadores", sala.getJogadores()
-        ));
     }
 
-    static class Sala {
-        private final String codigo;
-        private final String disciplina;
-        private final List<String> jogadores = new ArrayList<>();
-
-        public Sala(String codigo, String disciplina) {
-            this.codigo = codigo;
-            this.disciplina = disciplina;
+    @GetMapping("/api/salas/{codigo}/professor")
+    public ResponseEntity<?> painelProfessor(
+        @PathVariable String codigo,
+        @AuthenticationPrincipal UserDetails user
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("mensagem", "Entre com sua conta de professor para abrir o painel."));
         }
-
-        public void addJogador(String nome) {
-            jogadores.add(nome);
+        try {
+            return ResponseEntity.ok(quizService.painelProfessor(codigo, user.getUsername()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.status(403).body(Map.of("mensagem", erro.getMessage()));
         }
+    }
 
-        public List<String> getJogadores() {
-            return jogadores;
+    @PatchMapping("/api/salas/{codigo}/status")
+    public ResponseEntity<?> atualizarStatus(
+        @PathVariable String codigo,
+        @AuthenticationPrincipal UserDetails user,
+        @RequestBody Map<String, Object> payload
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("mensagem", "Entre com sua conta de professor para controlar a atividade."));
         }
-
-        public String getDisciplina() {
-            return disciplina;
+        Object paused = payload.get("pausada");
+        Object finished = payload.get("finalizada");
+        if (!(paused instanceof Boolean) && !(finished instanceof Boolean)) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", "Informe o estado de pausa ou encerramento."));
+        }
+        try {
+            return ResponseEntity.ok(quizService.atualizarStatus(
+                codigo, user.getUsername(),
+                paused instanceof Boolean value ? value : null,
+                finished instanceof Boolean value ? value : null
+            ));
+        } catch (IllegalStateException erro) {
+            return ResponseEntity.status(409).body(Map.of("mensagem", erro.getMessage()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.status(403).body(Map.of("mensagem", erro.getMessage()));
         }
     }
 }
-     

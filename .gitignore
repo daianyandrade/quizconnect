@@ -1,4 +1,7 @@
 target/
+quizconnect.db
+quizconnect.db-shm
+quizconnect.db-wal
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

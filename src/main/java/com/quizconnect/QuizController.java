@@ -1,108 +1,217 @@
 package com.quizconnect;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class QuizController {
 
-    // Perguntas temporarias; futuramente virao do banco de dados.
-    private final List<Map<String, Object>> perguntas = List.of(
-        pergunta(1, "Programação", "Qual estrutura de repetição executa um bloco enquanto uma condição for verdadeira?",
-            List.of("if", "while", "switch", "try/catch"), "while"),
-        pergunta(2, "Banco de Dados", "Qual comando SQL é usado para consultar dados?",
-            List.of("SELECT", "INSERT", "UPDATE", "DELETE"), "SELECT"),
-        pergunta(3, "Engenharia de Software", "Qual prática busca verificar automaticamente se uma pequena parte do código funciona?",
-            List.of("Teste unitário", "Deploy manual", "Modelagem de rede", "Backup"), "Teste unitário"),
-        pergunta(4, "Redes de Computadores", "Qual protocolo é usado para acessar páginas web com segurança?",
-            List.of("FTP", "HTTP", "HTTPS", "SMTP"), "HTTPS"),
-        pergunta(5, "Sistemas Operacionais", "Qual é uma função principal de um sistema operacional?",
-            List.of("Gerenciar recursos do computador", "Criar cabos de rede", "Desenhar páginas web", "Substituir o banco de dados"),
-            "Gerenciar recursos do computador")
-    );
+    private final QuizService quizService;
+    private final OpenTdbClient openTdbClient;
+    private final MyMemoryTranslationClient translationClient;
+    private final DistractorAiClient distractorAiClient;
 
-    @GetMapping("/api/perguntas")
-    public List<Map<String, Object>> listarPerguntas(@RequestParam(required = false) String disciplina) {
-        // O filtro permite criar uma sala para uma disciplina ou para todas.
-        List<Map<String, Object>> perguntasDaDisciplina = perguntas.stream()
-            .filter(pergunta -> disciplina == null || disciplina.isBlank() || disciplina.equals("Todas")
-                || disciplina.equals(pergunta.get("disciplina")))
-            .toList();
-        List<Map<String, Object>> ordemAleatoria = new ArrayList<>(perguntasDaDisciplina);
-        Collections.shuffle(ordemAleatoria);
-
-        // O gabarito fica fora da resposta publica e nao chega ao navegador.
-        return ordemAleatoria.stream()
-            .map(pergunta -> Map.of(
-                "id", pergunta.get("id"),
-                "disciplina", pergunta.get("disciplina"),
-                "enunciado", pergunta.get("enunciado"),
-                "alternativas", alternativasAleatorias(pergunta)
-            ))
-            .toList();
-    }
-
-    public List<Map<String, Object>> listarPerguntas() {
-        return listarPerguntas(null);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<String> alternativasAleatorias(Map<String, Object> pergunta) {
-        // Copia antes de embaralhar para nao alterar a lista original.
-        List<String> alternativas = new ArrayList<>((List<String>) pergunta.get("alternativas"));
-        Collections.shuffle(alternativas);
-        return alternativas;
-    }
-
-    @PostMapping("/api/perguntas/{id}/responder")
-    public ResponseEntity<Map<String, Object>> responder(
-        @PathVariable int id,
-        @RequestBody Map<String, String> resposta
+    public QuizController(
+        QuizService quizService,
+        OpenTdbClient openTdbClient,
+        MyMemoryTranslationClient translationClient,
+        DistractorAiClient distractorAiClient
     ) {
-        String respostaEscolhida = resposta.get("resposta");
+        this.quizService = quizService;
+        this.openTdbClient = openTdbClient;
+        this.translationClient = translationClient;
+        this.distractorAiClient = distractorAiClient;
+    }
 
-        Map<String, Object> pergunta = perguntas.stream()
-            .filter(item -> item.get("id").equals(id))
-            .findFirst()
-            .orElse(null);
-
-        if (pergunta == null || respostaEscolhida == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "mensagem", "Pergunta ou resposta inválida."
-            ));
+    @GetMapping("/api/salas/{codigo}/participantes/{participanteId}/quiz")
+    public ResponseEntity<?> entrarNoQuiz(@PathVariable String codigo, @PathVariable String participanteId) {
+        try {
+            return ResponseEntity.ok(quizService.entrarNoQuiz(codigo, participanteId));
+        } catch (IllegalStateException erro) {
+            return ResponseEntity.status(409).body(Map.of("mensagem", erro.getMessage()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", erro.getMessage()));
         }
-
-        boolean correta = pergunta.get("respostaCorreta").equals(respostaEscolhida);
-
-        return ResponseEntity.ok(Map.of(
-            "correta", correta,
-            "respostaCorreta", pergunta.get("respostaCorreta")
-        ));
     }
 
-    private static Map<String, Object> pergunta(
-        int id,
-        String disciplina,
-        String enunciado,
-        List<String> alternativas,
-        String respostaCorreta
+    @PostMapping("/api/salas/{codigo}/participantes/{participanteId}/respostas")
+    public ResponseEntity<Map<String, Object>> responder(
+        @PathVariable String codigo,
+        @PathVariable String participanteId,
+        @RequestBody Map<String, Object> payload
     ) {
-        return Map.of(
-            "id", id,
-            "disciplina", disciplina,
-            "enunciado", enunciado,
-            "alternativas", alternativas,
-            "respostaCorreta", respostaCorreta
-        );
+        if (!(payload.get("perguntaId") instanceof Number id)
+            || !(payload.get("resposta") instanceof String answer)) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", "Questão e resposta são obrigatórias."));
+        }
+        try {
+            return ResponseEntity.ok(quizService.responder(codigo, participanteId, id.intValue(), answer));
+        } catch (IllegalStateException erro) {
+            return ResponseEntity.status(409).body(Map.of("mensagem", erro.getMessage()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", erro.getMessage()));
+        }
+    }
+
+    @GetMapping("/api/salas/{codigo}/questoes")
+    public ResponseEntity<?> listarQuestoes(
+        @PathVariable String codigo,
+        @AuthenticationPrincipal UserDetails user
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("mensagem", "Entre com sua conta de professor para editar o quiz."));
+        }
+        try {
+            return ResponseEntity.ok(quizService.listarQuestoesDaSala(codigo, user.getUsername()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.status(403).body(Map.of("mensagem", erro.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/salas/{codigo}/questoes")
+    public ResponseEntity<Map<String, Object>> adicionarQuestao(
+        @PathVariable String codigo,
+        @AuthenticationPrincipal UserDetails user,
+        @RequestBody Map<String, Object> payload
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("mensagem", "Entre com sua conta de professor para editar o quiz."));
+        }
+        String enunciado = texto(payload.get("enunciado"));
+        String correta = texto(payload.get("respostaCorreta"));
+        List<String> distratores = listaTextos(payload.get("distratores"));
+        if (enunciado == null || correta == null || distratores == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "mensagem", "Informe a pergunta, a resposta correta e três campos de distrator."));
+        }
+        try {
+            return ResponseEntity.ok(quizService.adicionarQuestao(
+                codigo, user.getUsername(), enunciado, correta, distratores, "MANUAL"));
+        } catch (IllegalStateException erro) {
+            return ResponseEntity.status(409).body(Map.of("mensagem", erro.getMessage()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", erro.getMessage()));
+        }
+    }
+
+    @PutMapping("/api/salas/{codigo}/questoes/{perguntaId}")
+    public ResponseEntity<?> atualizarQuestao(
+        @PathVariable String codigo,
+        @PathVariable int perguntaId,
+        @AuthenticationPrincipal UserDetails user,
+        @RequestBody Map<String, Object> payload
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("mensagem", "Entre com sua conta de professor para editar o quiz."));
+        }
+        String enunciado = texto(payload.get("enunciado"));
+        String correta = texto(payload.get("respostaCorreta"));
+        List<String> distratores = listaTextos(payload.get("distratores"));
+        if (enunciado == null || correta == null || distratores == null) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", "Pergunta, resposta correta e três distratores são necessários."));
+        }
+        try {
+            quizService.atualizarQuestao(codigo, user.getUsername(), perguntaId,
+                enunciado, correta, distratores);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException erro) {
+            return ResponseEntity.status(409).body(Map.of("mensagem", erro.getMessage()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", erro.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/api/salas/{codigo}/questoes/{perguntaId}")
+    public ResponseEntity<?> removerQuestao(
+        @PathVariable String codigo,
+        @PathVariable int perguntaId,
+        @AuthenticationPrincipal UserDetails user
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("mensagem", "Entre com sua conta de professor para editar o quiz."));
+        }
+        try {
+            quizService.removerQuestao(codigo, user.getUsername(), perguntaId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException erro) {
+            return ResponseEntity.status(409).body(Map.of("mensagem", erro.getMessage()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.status(403).body(Map.of("mensagem", erro.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/salas/{codigo}/importar-opentdb")
+    public ResponseEntity<Map<String, Object>> importarOpenTdb(
+        @PathVariable String codigo,
+        @AuthenticationPrincipal UserDetails user,
+        @RequestBody(required = false) Map<String, Object> payload
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("mensagem", "Entre com sua conta de professor para importar questões."));
+        }
+        String professorEmail = user.getUsername();
+        try {
+            quizService.validarImportacaoOpenTdb(codigo, professorEmail);
+            int quantidade = payload == null || !(payload.get("quantidade") instanceof Number count)
+                ? 5 : Math.min(5, Math.max(1, count.intValue()));
+            String tipo = payload == null || !(payload.get("tipo") instanceof String value) ? "multiple" : value;
+            String dificuldade = payload == null || !(payload.get("dificuldade") instanceof String value) ? "" : value;
+            List<QuizService.QuestaoImportada> traduzidas = new ArrayList<>();
+            for (OpenTdbClient.Questao question : openTdbClient.buscarQuestoes(quantidade, tipo, dificuldade)) {
+                traduzidas.add(new QuizService.QuestaoImportada(
+                    translationClient.traduzir(question.enunciado()),
+                    translationClient.traduzir(question.respostaCorreta())
+                ));
+            }
+            int imported = quizService.importarQuestoes(codigo, professorEmail, traduzidas);
+            return ResponseEntity.ok(Map.of("importadas", imported, "fonte", "OpenTDB", "idioma", "pt-BR"));
+        } catch (IllegalStateException erro) {
+            return ResponseEntity.status(409).body(Map.of("mensagem", erro.getMessage()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", erro.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/salas/{codigo}/sugestoes-distratores")
+    public ResponseEntity<?> sugerirDistratores(
+        @PathVariable String codigo,
+        @AuthenticationPrincipal UserDetails user,
+        @RequestBody Map<String, String> payload
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("mensagem", "Entre com sua conta de professor para usar a IA."));
+        }
+        try {
+            quizService.validarAvaliador(codigo, user.getUsername());
+            return ResponseEntity.ok(Map.of("distratores", distractorAiClient.sugerir(
+                payload.get("enunciado"), payload.get("respostaCorreta"))));
+        } catch (IllegalStateException erro) {
+            return ResponseEntity.status(503).body(Map.of("mensagem", erro.getMessage()));
+        } catch (IllegalArgumentException erro) {
+            return ResponseEntity.badRequest().body(Map.of("mensagem", erro.getMessage()));
+        }
+    }
+
+    private String texto(Object valor) {
+        return valor instanceof String texto ? texto : null;
+    }
+
+    private List<String> listaTextos(Object valor) {
+        if (!(valor instanceof List<?> lista) || lista.size() != 3
+            || lista.stream().anyMatch(item -> !(item instanceof String))) {
+            return null;
+        }
+        return lista.stream().map(String.class::cast).toList();
     }
 }
-
